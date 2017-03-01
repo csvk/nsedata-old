@@ -11,7 +11,7 @@ import currderivs
 root = 'C:/Users/Souvik/OneDrive/Python/nsedata'
 os.chdir(root)
 
-date_range = dates.dates('2008-06-01')
+date_range = dates.dates('2017-02-01')
 currderivs.get_bhavcopy(date_range)
 
 

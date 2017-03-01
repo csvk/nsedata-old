@@ -10,7 +10,8 @@ import requests, zipfile, os
 import dates
 
 URL = 'https://www.nseindia.com/archives/cd/bhav/'
-LOGFILE = 'data/log.txt'
+PATH = 'data/currderivs/'
+LOGFILE = 'log.txt'
 NEW_FILENAME_FORMAT = 'CD_BhavcopyDDMMYY.zip'
 OLD_FILENAME_FORMAT = 'CD_NSEUSDINRDDMMYY.dbf.zip'
 
@@ -27,14 +28,14 @@ def download(date):
         zip_file = requests.get('{}{}'.format(URL, file_name))
         zip_file.raise_for_status()
 
-        temp_file = open('data/{}'.format(file_name), 'wb')
+        temp_file = open('{}{}'.format(PATH, file_name), 'wb')
         temp_file.write(zip_file.content)
         temp_file.close()
 
-        temp_file = zipfile.ZipFile('data/{}'.format(file_name), 'r')
-        temp_file.extractall('data')
+        temp_file = zipfile.ZipFile('{}{}'.format(PATH, file_name), 'r')
+        temp_file.extractall(PATH)
         temp_file.close()
-        os.remove('data/{}'.format(file_name))
+        os.remove('{}{}'.format(PATH, file_name))
         log_line = '{}, {}: File downloaded: {}'.format(date, dates.dayofweek(date), file_name)
         log_lines.append('\n{}'.format(log_line))
         print(log_line)
@@ -46,7 +47,7 @@ def download(date):
 
 def write_log():
 
-    f_log = open(LOGFILE, 'a')
+    f_log = open('{}{}'.format(PATH, LOGFILE), 'a')
     f_log.writelines(log_lines)
     f_log.close()
 
