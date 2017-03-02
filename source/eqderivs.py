@@ -9,21 +9,19 @@ Created on Feb 28, 2017
 import requests, zipfile, os
 import dates
 
-URL = 'https://www.nseindia.com/archives/cd/bhav/'
-PATH = 'data/currderivs/'
+
+b = 'https://www.nseindia.com/archives/fo/bhav/fo280217.zip'
+
+URL = 'https://www.nseindia.com/archives/fo/bhav/'
+PATH = 'data/eqderivs/'
 LOGFILE = 'log.csv'
-NEW_FILENAME_FORMAT = 'CD_BhavcopyDDMMYY.zip'
-OLD_FILENAME_FORMAT = 'CD_NSEUSDINRDDMMYY.dbf.zip'
+FILENAME_FORMAT = 'foDDMMYY.zip'
 
 log_lines = []
 
 def download(date):
 
-
-    if date <='2010-10-28':
-        file_name = OLD_FILENAME_FORMAT.replace('DDMMYY', dates.ddmmyy(date))
-    else:
-        file_name = NEW_FILENAME_FORMAT.replace('DDMMYY', dates.ddmmyy(date))
+    file_name = FILENAME_FORMAT.replace('DDMMYY', dates.ddmmyy(date))
 
     try:
         zip_file = requests.get('{}{}'.format(URL, file_name))
