@@ -31,17 +31,29 @@ def dates(start='2008-06-01', end=yesterday, days=all_days):
 
 
 def ddmmyy(date):
-
-    #print('dates.ddmmyy', date, '{}{}{}'.format(date[8:9],date[5:6],date[2:3]))
     return '{}{}{}'.format(date[8:10],date[5:7],date[2:4])
 
 
-def dayofweek(date):
+def ddmmyyyy(date):
+    return '{}{}{}'.format(date[8:10],date[5:7],date[0:4])
 
+def ddMMMyyyy(date):
+    return '{}{}{}'.format(date[8:10],MMM(date),date[0:4])
+
+
+def yyyy(date):
+    return '{}'.format(date[0:4])
+
+
+def MMM(date):
+    return months(date[5:7], 'MMM')
+
+
+def dayofweek(date):
     return calendar.day_name[datetime.strptime(date, '%Y-%m-%d').weekday()]
 
 
-def months(month):
+def months(month, format='x'):
     """Return full month name"""
 
     month = int(month)
@@ -72,7 +84,18 @@ def months(month):
               '9': 'September'
               }
 
-    return months[month]
+    if format == 'x':
+        return_val = months[month]
+    elif format == 'Mmm':
+        return_val = months[month][0:3]
+    elif format == 'MMM':
+        return_val = months[month][0:3].upper()
+    elif format == 'mmm':
+        return_val = months[month][0:3].lower()
+    else:
+        return_val = months[month]
+
+    return return_val
 
 
 

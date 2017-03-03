@@ -10,21 +10,32 @@ import requests, zipfile, os
 import dates
 
 
-b = 'https://www.nseindia.com/archives/fo/bhav/fo280217.zip'
 
-URL = 'https://www.nseindia.com/archives/fo/bhav/'
+NEW_URL = 'https://www.nseindia.com/archives/fo/bhav/'
+OLD_URL = 'https://www.nseindia.com/content/historical/DERIVATIVES/'
 PATH = 'data/eqderivs/'
 LOGFILE = 'log.csv'
-FILENAME_FORMAT = 'foDDMMYY.zip'
+NEW_FILENAME_FORMAT = 'foDDMMYY.zip'
+OLD_FILENAME_PATH = 'YYYY/MMM/'
+OLD_FILENAME_FORMAT = 'foDDMMMYYYYbhav.csv.zip'
 
 log_lines = []
 
-def download(date):
+def download(date, format):
 
-    file_name = FILENAME_FORMAT.replace('DDMMYY', dates.ddmmyy(date))
+
+    if date <= '2016-02-15' or format == 'old':
+        url = OLD_URL
+        file_path = OLD_FILENAME_PATH.replace('YYYY', dates.yyyy(date))
+        file_path = file_path.replace('MMM', dates.MMM(date))
+        file_name = OLD_FILENAME_FORMAT.replace('DDMMMYYYY', dates.ddMMMyyyy(date))
+    elif format == 'new':
+        url = NEW_URL
+        file_path = ''
+        file_name = NEW_FILENAME_FORMAT.replace('DDMMYY', dates.ddmmyy(date))
 
     try:
-        zip_file = requests.get('{}{}'.format(URL, file_name))
+        zip_file = requests.get('{}{}{}'.format(url, file_path, file_name))
         zip_file.raise_for_status()
 
         temp_file = open('{}{}'.format(PATH, file_name), 'wb')
@@ -56,10 +67,10 @@ def write_log():
     f_log.close()
 
 
-def get_bhavcopy(date_range):
+def get_bhavcopy(date_range, format='old'):
 
     for date in date_range:
-        download(date)
+        download(date, format)
 
     write_log()
 
