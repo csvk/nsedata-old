@@ -12,7 +12,8 @@ root = 'C:/Users/Souvik/OneDrive/Python/nsedata'
 os.chdir(root)
 
 print('Initiating NSE Currency derivatives bhavcopy download')
-date_range = dates.dates('2010-10-24', '2010-11-05')
+# date_range = dates.dates('2011-12-03')
+date_range = dates.adhoc_dates
 currderivs.get_bhavcopy(date_range)
 
 # print('Initiating NSE Equity derivatives bhavcopy download')

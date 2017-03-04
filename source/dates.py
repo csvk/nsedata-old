@@ -99,5 +99,8 @@ def months(month, format='x'):
 
 
 
-
+adhoc_dates = [
+'2008-08-15',
+'2008-08-18'
+]
 
