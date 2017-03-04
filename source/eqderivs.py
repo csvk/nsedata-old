@@ -8,9 +8,12 @@ Created on Feb 28, 2017
 
 import requests, zipfile, os
 import dates
+import selenium
+from selenium import webdriver
+from selenium.webdriver.support.ui import Select
+import traceback, logging
 
-
-
+CHROME_DRIVER = 'C:\Program Files (x86)/chromedriver_win32/chromedriver.exe'
 NEW_URL = 'https://www.nseindia.com/archives/fo/bhav/'
 OLD_URL = 'https://www.nseindia.com/content/historical/DERIVATIVES/'
 PATH = 'data/eqderivs/'
@@ -21,8 +24,7 @@ OLD_FILENAME_FORMAT = 'foDDMMMYYYYbhav.csv.zip'
 
 log_lines = []
 
-def download(date, format):
-
+def download(date, format='old'):
 
     if date <= '2016-02-15' or format == 'old':
         url = OLD_URL
