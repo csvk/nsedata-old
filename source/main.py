@@ -11,10 +11,11 @@ import currderivs, eqderivs
 root = 'C:/Users/Souvik/OneDrive/Python/nsedata'
 os.chdir(root)
 
-print('Initiating NSE Currency derivatives bhavcopy download')
+# print('Initiating NSE Currency derivatives bhavcopy download')
 # date_range = dates.dates('2011-12-03')
-date_range = dates.adhoc_dates
-currderivs.get_bhavcopy(date_range)
+# date_range = dates.adhoc_dates
+# currderivs.get_bhavcopy(date_range)
+currderivs.dbf_to_csv()
 
 # print('Initiating NSE Equity derivatives bhavcopy download')
 # date_range.reverse()

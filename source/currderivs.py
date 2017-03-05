@@ -6,12 +6,14 @@ Created on Feb 28, 2017
 
 """
 
-import requests, zipfile, os
-import dates
+import os
+import requests, zipfile
+import dates, dbfhandler
 
 URL = 'https://www.nseindia.com/archives/cd/bhav/'
 PATH = 'data/currderivs/'
-DBF_PATH = 'data/currderivs/dbf'
+DBF_PATH = 'data/currderivs/dbf/'
+CSV_PATH = 'data/currderivs/csv/'
 LOGFILE = 'log.csv'
 NEW_FILENAME_FORMAT = 'CD_BhavcopyDDMMYY.zip'
 OLD_FILENAME_FORMAT = 'CD_NSEUSDINRDDMMYY.dbf.zip'
@@ -70,4 +72,21 @@ def get_bhavcopy(date_range):
         download(date)
 
     write_log()
+
+
+
+def dbf_to_csv(dbf_path=DBF_PATH, csv_path=CSV_PATH):
+
+    dbf_files = [f for f in os.listdir(DBF_PATH) if f.endswith('.dbf')]
+
+    for file in dbf_files:
+        csv_records = dbfhandler.dbf_to_csv('{}{}'.format(DBF_PATH, file))
+
+        csv_file = open('{}{}.csv'.format(CSV_PATH, file[:-4]), 'a')
+        csv_file.writelines(csv_records)
+        csv_file.close()
+        print('File written: {}'.format('{}{}.csv'.format(CSV_PATH, file[:-4])))
+
+
+
 
