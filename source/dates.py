@@ -10,6 +10,7 @@ from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 import calendar
 
+adhoc_dates = [] # Can be initiated with dates in YYYY-MM-DD format
 yesterday = (date.today() - relativedelta(days=1)).strftime('%Y-%m-%d')
 all_days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -29,7 +30,7 @@ def dates(start='2008-06-01', end=yesterday, days=all_days):
 
     return dates
 
-
+# Below functions take YYYY-MM-DD as input date format
 def ddmmyy(date):
     return '{}{}{}'.format(date[8:10],date[5:7],date[2:4])
 
@@ -48,11 +49,15 @@ def yyyy(date):
 def MMM(date):
     return months(date[5:7], 'MMM')
 
-
 def dayofweek(date):
     return calendar.day_name[datetime.strptime(date, '%Y-%m-%d').weekday()]
 
+# Below functions take input as DDMMYY as input date format
 
+def ddmmyy_to_yyyy_mm_dd(date): # Can handle dates years from 1961 to 2060
+    return '{}{}-{}-{}'.format('19' if date[4:6] > '60' else '20', date[4:6], date[2:4], date[0:2])
+
+# Accepts month in numeric format of numeric in text format
 def months(month, format='x'):
     """Return full month name"""
 
@@ -99,8 +104,5 @@ def months(month, format='x'):
 
 
 
-adhoc_dates = [
-'2008-08-15',
-'2008-08-18'
-]
+
 

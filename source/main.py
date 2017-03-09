@@ -15,7 +15,9 @@ os.chdir(root)
 # date_range = dates.dates('2011-12-03')
 # date_range = dates.adhoc_dates
 # currderivs.get_bhavcopy(date_range)
-currderivs.dbf_to_csv()
+# currderivs.dbf_to_csv()
+
+currderivs.clean_csv()
 
 # print('Initiating NSE Equity derivatives bhavcopy download')
 # date_range.reverse()
