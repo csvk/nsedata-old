@@ -4,11 +4,11 @@ Created on Feb 28, 2017
 @Program Function: Download NSE Bhavcopy
 
 """
-
-import dates, os
+import os
+import dates
 import currderivs, eqderivs
 
-root = 'C:/Users/Souvik/OneDrive/Python/nsedata'
+root = 'C:/Users/Souvik/OneDrive/Python/nsedata/'
 os.chdir(root)
 
 # print('Initiating NSE Currency derivatives bhavcopy download')
@@ -17,7 +17,15 @@ os.chdir(root)
 # currderivs.get_bhavcopy(date_range)
 # currderivs.dbf_to_csv()
 
-currderivs.clean_csv()
+# currderivs.clean_csv()
+
+#currderivs.format_csv_futures('data/currderivs/csv/cleaned/',
+#                              'Symbol', 'Date', 'OPEN_PRICE', 'HIGH_PRICE', 'LOW_PRICE', 'CLOSE_PRIC', 'TRD_NO_CON',
+#                              'OI_NO_CON', 'Expiry')
+
+currderivs.format_csv_futures('data/currderivs/csv/uncleaned/',
+                              'CONTRACT_D', 'Date', 'OPEN_PRICE', 'HIGH_PRICE', 'LOW_PRICE', 'CLOSE_PRIC', 'TRD_NO_CON',
+                              'OI_NO_CON', 'Expiry')
 
 # print('Initiating NSE Equity derivatives bhavcopy download')
 # date_range.reverse()
