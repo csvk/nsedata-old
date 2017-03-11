@@ -1,7 +1,7 @@
 """
 Created on Feb 21, 2017
 @author: Souvik
-@Program Function: Dates list along with click requirements
+@Program Function: Date utility functions
 
 
 """

@@ -23,9 +23,11 @@ os.chdir(root)
 #                              'Symbol', 'Date', 'OPEN_PRICE', 'HIGH_PRICE', 'LOW_PRICE', 'CLOSE_PRIC', 'TRD_NO_CON',
 #                              'OI_NO_CON', 'Expiry')
 
-currderivs.format_csv_futures('data/currderivs/csv/uncleaned/',
-                              'CONTRACT_D', 'Date', 'OPEN_PRICE', 'HIGH_PRICE', 'LOW_PRICE', 'CLOSE_PRIC', 'TRD_NO_CON',
-                              'OI_NO_CON', 'Expiry')
+#currderivs.format_csv_futures('data/currderivs/csv/uncleaned/',
+#                              'CONTRACT_D', 'Date', 'OPEN_PRICE', 'HIGH_PRICE', 'LOW_PRICE', 'CLOSE_PRIC', 'TRD_NO_CON',
+#                              'OI_NO_CON', 'Expiry')
+
+currderivs.ren_csv_files('data/currderivs/csv/cleaned/formatted/')
 
 # print('Initiating NSE Equity derivatives bhavcopy download')
 # date_range.reverse()

@@ -136,7 +136,7 @@ def format_csv_futures(path, *columns):
 
     csv_files = [f for f in os.listdir(os.curdir) if f.find('OP') < 0 and f.endswith('.csv')]
 
-    print('Initiating formatting of {} files', len(csv_files))
+    print('Initiating formatting of {} files'.format(len(csv_files)))
 
     cols = [c for c in columns]
 
@@ -149,6 +149,24 @@ def format_csv_futures(path, *columns):
             print(date, ',File Cleaned', file)
         except:
             print(date, ',Error in cleaning', file)
+
+def ren_csv_files(path):
+
+    os.chdir(path)
+
+    csv_files = [f for f in os.listdir(os.curdir) if f.find('OP') < 0 and f.endswith('.csv')]
+
+    for file in csv_files:
+        try:
+            new_name = '{}.csv'.format(dates.ddmmyy_to_yyyy_mm_dd(file[-10:][:6]))
+            os.rename(file, new_name)
+            print(new_name, 'file renamed')
+        except:
+            print(new_name, 'file rename failed')
+
+
+
+
 
 
 
