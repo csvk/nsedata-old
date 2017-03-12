@@ -87,9 +87,6 @@ def ddMMMyyyy_to_yyyy_mm_dd(date):
 def dd_MMM_yyyy_to_yyyy_mm_dd(date):
     return '{}-{}-{}'.format(date[7:11], mm(date[3:6]), date[0:2])
 
-def ddMMMyyyy_to_yyyy_mm_dd(date):
-    return '{}-{}-{}'.format(date[5:9], mm(date[2:5]), date[0:2])
-
 def ddmmyyyy_to_yyyy_mm_dd(date):
     return '{}-{}-{}'.format(date[4:8], date[2:4], date[0:2])
 
