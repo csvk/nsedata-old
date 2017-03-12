@@ -36,7 +36,7 @@ os.chdir(ROOT)
 ### Steps End for Currderivs edit
 
 #os.chdir(PATH + 'cleaned/formatted/')
-os.chdir(PATH + 'cleaned/formatted/' + 'test/')
+os.chdir(PATH + 'cleaned/formatted/')
 #cd.continuous_contracts(1)
 cd.continuous_contracts_all()
 

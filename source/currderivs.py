@@ -167,33 +167,6 @@ def ren_csv_files():
 
 
 
-def continuous_contracts(seriesdelta):
-
-    csv_files = [f for f in os.listdir(os.curdir) if f.endswith('.csv')]
-
-    for file in csv_files:
-        date = file[0:10]
-        df = pd.read_csv(file)
-
-        delta_date = dates.relativedate(date, months=seriesdelta)
-        #print(file, '$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-        #print('$$', delta_date)
-        delta_date = dates.setdate(delta_date, day=1)
-        #print('$$', delta_date)
-        sel = df.loc[(df['Date'] <  df['Expiry']) & (df['Expiry'] < delta_date)]
-        if sel.empty:
-            delta_date = dates.relativedate(date, months=seriesdelta + 1)
-            #print('##', delta_date)
-            delta_date = dates.setdate(delta_date, day=1)
-            #print('##', delta_date)
-            sel = df.loc[(df['Date'] < df['Expiry']) & (df['Expiry'] < delta_date)]
-        if sel.empty:
-            print("Error,", date)
-        else:
-            print('Success,{},{}'.format(date, sel['Expiry'].iloc[0]))
-
-        #print(type(sel))
-
 def select_near_expiry(expiry_dates, date, symbol, delta):
 
     for expiry in expiry_dates[symbol]:
