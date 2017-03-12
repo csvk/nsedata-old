@@ -23,6 +23,7 @@ CLEANED = 'cleaned/'
 UNCLEANED = 'uncleaned/'
 FORMATTED = 'formatted/'
 EXPIRIES = 'expiries.txt'
+CONTINUOUS = 'continuous/'
 
 log_lines = []
 
@@ -193,9 +194,84 @@ def continuous_contracts(seriesdelta):
 
         #print(type(sel))
 
-def continuous_contracts_all():
+def select_near_expiry(expiry_dates, date, symbol, delta):
 
+    for expiry in expiry_dates[symbol]:
+        if expiry > dates.relativedate(date, days=delta):
+            #print('select_near_expiry', symbol, date, delta, expiry)
+            return expiry
+
+def select_far_expiry(expiry_dates, date, symbol, delta):
+
+    for expiry in expiry_dates[symbol]:
+        if int(date[8:10]) < delta:
+            month_delta = 1
+        else:
+            month_delta = 2
+        if expiry > dates.relativedate(date, months=month_delta):
+            #print('select_far_expiry', symbol, date, delta, expiry)
+            return expiry
+
+
+def continuous_contracts_all(near_delta=0, far_delta=10):
+    """
+    Create continuous contracts file for near and far series
+    :param near_delta: Near Contract switch day difference from expiry day
+    :param far_delta: Far Contract switch day as month calendar day
+    :return: None, Create continuous contracts file
+    """
+
+    if not os.path.isfile(EXPIRIES):
+        write_expiries()
     expiry_dates = read_expiries(EXPIRIES)
+    print(expiry_dates)
+
+    utils.mkdir(CONTINUOUS)
+
+    csv_files = [f for f in os.listdir(os.curdir) if f.endswith('.csv')]
+
+    near_exp, far_exp = {}, {} #'1900-01-01', '1900-01-01' # Initialize
+
+    for file in csv_files:
+        try:
+            date = file[0:10]
+            df = pd.read_csv(file)
+            date_pd = pd.DataFrame()
+            for symbol in df['Symbol'].unique():
+                if symbol not in near_exp:
+                    near_exp[symbol], far_exp[symbol] = '1900-01-01', '1900-01-01'  # Initialize
+
+                if near_exp[symbol] <= dates.relativedate(date, days=near_delta):
+                    near_exp[symbol] = select_near_expiry(expiry_dates, date, symbol, near_delta)
+
+                if int(date[8:10]) < far_delta:
+                    month_delta = 1
+                else:
+                    month_delta = 2
+                exp_month_start_date = dates.relativedate(date, months=month_delta)
+                exp_month_start_date = dates.setdate(exp_month_start_date, day=1)
+
+                if far_exp[symbol] < exp_month_start_date:
+                    far_exp[symbol] = select_far_expiry(expiry_dates, date, symbol, far_delta)
+                series1 = df.loc[(df['Symbol'] == symbol) & (df['Expiry'] == near_exp[symbol])]
+                series2 = df.loc[(df['Symbol'] == symbol) & (df['Expiry'] == far_exp[symbol])]
+                series1['Symbol'], series2['Symbol'] = series1['Symbol'] + '-I', series2['Symbol'] + '-II'
+                if date_pd.empty:
+                    date_pd = pd.concat([series1, series2], axis=0)
+                else:
+                    date_pd = pd.concat([date_pd, series1, series2], axis=0)
+            date_pd.to_csv('{}{}'.format(CONTINUOUS, file), sep=',', index=False)
+            print(date, ',Continuous contract created', file)
+        except:
+            print(date, ',Error creating Continuous contract', file)
+
+
+
+
+
+
+
+
 
 
 
@@ -218,7 +294,6 @@ def write_expiries(e_file=EXPIRIES):
 
     for key, value in expiries.items():
         expiries[key].sort()
-        print(key, len(value), value)
 
     with open(e_file, 'wb') as handle:
         pkl.dump(expiries, handle)

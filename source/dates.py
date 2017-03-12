@@ -69,6 +69,9 @@ def setdate(date, year=0, month=0, day=0):
 
     return strpdate.strftime('%Y-%m-%d')
 
+def datediff(date1, date2):
+    return (datetime.strptime(date1, '%Y-%m-%d') - datetime.strptime(date2, '%Y-%m-%d')).days
+
 # Below functions take input as DDMMYY as input date format
 
 def ddmmyy_to_yyyy_mm_dd(date): # Can handle dates years from 1961 to 2060
@@ -84,7 +87,13 @@ def ddMMMyyyy_to_yyyy_mm_dd(date):
 def dd_MMM_yyyy_to_yyyy_mm_dd(date):
     return '{}-{}-{}'.format(date[7:11], mm(date[3:6]), date[0:2])
 
-# Below functions take input as DDMMYY as input date format
+def ddMMMyyyy_to_yyyy_mm_dd(date):
+    return '{}-{}-{}'.format(date[5:9], mm(date[2:5]), date[0:2])
+
+def ddmmyyyy_to_yyyy_mm_dd(date):
+    return '{}-{}-{}'.format(date[4:8], date[2:4], date[0:2])
+
+# Below functions take MOnth name as input: full name of first three chars
 
 def mm(month):
     """Return month in MM format"""
