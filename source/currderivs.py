@@ -239,16 +239,6 @@ def continuous_contracts_all(near_delta=0, far_delta=10):
             print(date, ',Error creating Continuous contract', file)
 
 
-
-
-
-
-
-
-
-
-
-
 def write_expiries(e_file=EXPIRIES):
 
     expiries = {}
