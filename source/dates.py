@@ -34,6 +34,12 @@ def dates(start='2008-06-01', end=yesterday, days=all_days):
 def ddmmyy(date):
     return '{}{}{}'.format(date[8:10],date[5:7],date[2:4])
 
+def mm_int(date):
+    """
+    :param date:
+    :return: Month in integer format
+    """
+    return int(date[5:7])
 
 def ddmmyyyy(date):
     return '{}{}{}'.format(date[8:10],date[5:7],date[0:4])
@@ -49,8 +55,11 @@ def yyyy(date):
 def MMM(date):
     return months(date[5:7], 'MMM')
 
+def weekday(date):
+    return datetime.strptime(date, '%Y-%m-%d').weekday()
+
 def dayofweek(date):
-    return calendar.day_name[datetime.strptime(date, '%Y-%m-%d').weekday()]
+    return calendar.day_name[weekday(date)]
 
 def relativedate(date, years=0, months=0, days=0):
     return (datetime.strptime(date, '%Y-%m-%d')
@@ -90,7 +99,7 @@ def dd_MMM_yyyy_to_yyyy_mm_dd(date):
 def ddmmyyyy_to_yyyy_mm_dd(date):
     return '{}-{}-{}'.format(date[4:8], date[2:4], date[0:2])
 
-# Below functions take MOnth name as input: full name of first three chars
+# Below functions take Month name as input: full name of first three chars
 
 def mm(month):
     """Return month in MM format"""

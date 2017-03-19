@@ -25,6 +25,8 @@ UNCLEANED = 'uncleaned/'
 FORMATTED = 'formatted/'
 EXPIRIES = 'expiries.txt'
 CONTINUOUS = 'continuous/'
+FUTURES = 'futures/'
+OPTIONS = 'options/'
 
 log_lines = []
 
@@ -121,27 +123,42 @@ def dbf_to_csv(dbf_path=DBF_PATH, csv_path=CSV_PATH):
 def clean_csv():
 
     utils.mkdir(CLEANED)
-    utils.mkdir(UNCLEANED)
 
     csv_files = [f for f in os.listdir(os.curdir) if f.endswith('.csv')]
+    csv_files.sort()
     print('Initiating cleaning of {} files'.format(len(csv_files)))
 
     success, error = 0, 0
+    TDM, TDW = 0, 0
+    save_month = 0
     for file in csv_files:
         try:
             df = pd.read_csv(file)
-            df['Date'] = [dates.ddmmyy_to_yyyy_mm_dd(file[-10:][:6])] * len(df['CONTRACT_D']) # Extract date from filename
-
+            date = file[0:10] # Extract date from filename
+            # Trading day of month
+            if dates.mm_int(date) != save_month: # New month
+                save_month = dates.mm_int(date)
+                TDM = 1
+            else:
+                TDM += 1
+            # Trading day of week
+            if dates.weekday(date) == 0: # Monday
+                TDW = 1
+            else:
+                TDW += 1
+            df['Date'] = [date] * len(df['CONTRACT_D'])
             df['Symbol'] = df['CONTRACT_D'].str[0:12]
             df['Expiry'] = df['CONTRACT_D'].str[12:23]
             df['Expiry'] = df['Expiry'].apply(dates.dd_MMM_yyyy_to_yyyy_mm_dd)
+            df['TDM'] = [TDM] * len(df['CONTRACT_D'])
+            df['TDW'] = [TDW] * len(df['CONTRACT_D'])
 
-            first_cols = ['Symbol', 'Date', 'Expiry']
+            first_cols = ['Symbol', 'Date', 'TDM', 'TDW', 'Expiry']
             df = df.reindex_axis( first_cols + list(set(df.columns) - set(first_cols)), axis=1)
             if file.find('OP') >= 0:
                 df['OptionType'] = df['CONTRACT_D'].str[23:25]
                 df['StrikePrice'] = df['CONTRACT_D'].str[25:50]
-                first_cols = ['Symbol', 'Date', 'Expiry', 'OptionType', 'StrikePrice']
+                first_cols = ['Symbol', 'Date', 'TDM', 'TDW', 'Expiry', 'OptionType', 'StrikePrice']
                 df = df.reindex_axis(first_cols + list(set(df.columns) - set(first_cols)), axis=1)
 
             df.drop('CONTRACT_D', axis=1, inplace=True)
@@ -171,7 +188,7 @@ def format_csv_futures(*columns):
     for file in csv_files:
         try:
             df = pd.read_csv(file)
-            date = dates.ddmmyy_to_yyyy_mm_dd(file[-10:][:6])  # Extract date from filename
+            date = file[0:10]  # Extract date from filename
             df = df.reindex_axis(cols, axis=1)
             df.to_csv('{}{}'.format(FORMATTED, file), sep=',', index=False)
             print(date, ',File formatted', file)
@@ -185,20 +202,39 @@ def format_csv_futures(*columns):
 
 def ren_csv_files():
 
-    csv_files = [f for f in os.listdir(os.curdir) if f.find('OP') < 0 and f.endswith('.csv')]
+    utils.mkdir(FUTURES)
+    utils.mkdir(OPTIONS)
 
-    success, error = 0, 0
-    for file in csv_files:
+    fut_files = [f for f in os.listdir(os.curdir) if f.find('OP') < 0 and f.endswith('.csv')]
+    opt_files = [f for f in os.listdir(os.curdir) if f.find('OP') >= 0 and f.endswith('.csv')]
+
+    print('Initiating renaming of {} futures & {} options files'.format(len(fut_files), len(opt_files)))
+
+    successf, errorf = 0, 0
+    successo, erroro = 0, 0
+    for file in fut_files:
         try:
-            new_name = '{}.csv'.format(dates.ddmmyy_to_yyyy_mm_dd(file[-10:][:6]))
+            new_name = '{}{}.csv'.format(FUTURES, dates.ddmmyy_to_yyyy_mm_dd(file[-10:][:6]))
             os.rename(file, new_name)
             print(new_name, 'file renamed')
-            success += 1
+            successf += 1
         except:
             print(new_name, 'file rename failed')
-            error += 1
+            errorf += 1
 
-    print('{} files renamed, {} errors'.format(success, error))
+    for file in opt_files:
+        try:
+            new_name = '{}{}.csv'.format(OPTIONS, dates.ddmmyy_to_yyyy_mm_dd(file[-10:][:6]))
+            os.rename(file, new_name)
+            print(new_name, 'file renamed')
+            successo += 1
+        except:
+            print(new_name, 'file rename failed')
+            erroro += 1
+
+    print('{} futures files renamed, {} errors'.format(successf, errorf))
+    print('{} options files renamed, {} errors'.format(successo, erroro))
+
 
 def select_expiry(expiry_dates, date, symbol, delta, series=0):
 
@@ -209,6 +245,24 @@ def select_expiry(expiry_dates, date, symbol, delta, series=0):
             return expiry_dates[symbol][expiry_index + series]
         expiry_index += 1
 
+
+def select_expiry_new(csv_files, expiry_hist, date, symbol, delta):
+
+    #expiry_index = 0
+    #print('select_expiry_new', symbol, date, delta)
+    #print(trading_days_between('2010-01-01', '2010-01-04', csv_files))
+    for expiry in expiry_hist['expiry_dates'][symbol]:
+        #if expiry > dates.relativedate(date, days=delta):
+        #if expiry_hist['eexpiry_hist['expiry_TDMs'][expiry] - TDM < deltaxpiry_TDMs'][exp[d][symbol]] - df['TDM'][0] >= d:
+        #print('select_expiry_new 2 %%%%%%%%%', expiry_hist['expiry_TDMs'][expiry], TDM, delta, expiry, date)
+        #if expiry_hist['expiry_TDMs'][expiry] - TDM > delta and expiry > date:
+        #print(type(expiry), type(date))
+        if trading_days_between(date, expiry, csv_files) > delta and expiry > date:
+            #print('select_expiry', symbol, date, delta, TDM, expiry_hist['expiry_dates'][symbol][expiry_index + delta])
+            #print('select_expiry_new', symbol, date, delta, TDM, expiry)
+            return expiry
+        #expiry_index += 1
+
 def select_near_expiry(expiry_dates, date, symbol, delta):
 
     for expiry in expiry_dates[symbol]:
@@ -218,6 +272,7 @@ def select_near_expiry(expiry_dates, date, symbol, delta):
 
 def select_far_expiry(expiry_dates, date, symbol, delta):
 
+    #print('select_expiry', symbol, date, delta)
     for expiry in expiry_dates[symbol]:
         if int(date[8:10]) < delta:
             month_delta = 1
@@ -236,9 +291,9 @@ def continuous_contracts(delta=0):
     """
 
     if not os.path.isfile(EXPIRIES):
-        write_expiries()
-    expiry_dates = read_expiries(EXPIRIES)
-    print(expiry_dates)
+        write_expiry_hist()
+    expiry_hist = read_expiry_hist(EXPIRIES)
+    print(expiry_hist)
 
     utils.mkdir(CONTINUOUS)
 
@@ -259,8 +314,8 @@ def continuous_contracts(delta=0):
                     near_exp[symbol], far_exp[symbol] = '1900-01-01', '1900-01-01'  # Initialize
 
                 if near_exp[symbol] <= dates.relativedate(date, days=delta):
-                    near_exp[symbol] = select_expiry(expiry_dates, date, symbol, delta, 0)
-                    far_exp[symbol] = select_expiry(expiry_dates, date, symbol, delta, 1)
+                    near_exp[symbol] = select_expiry(expiry_hist['expiry_dates'], date, symbol, delta, 0)
+                    far_exp[symbol] = select_expiry(expiry_hist['expiry_dates'], date, symbol, delta, 1)
                 series1 = df.loc[(df['Symbol'] == symbol) & (df['Expiry'] == near_exp[symbol])]
                 series2 = df.loc[(df['Symbol'] == symbol) & (df['Expiry'] == far_exp[symbol])]
                 series1['Symbol'], series2['Symbol'] = series1['Symbol'] + '-I', series2['Symbol'] + '-II'
@@ -289,20 +344,19 @@ def continuous_contracts_all(delta=None):
         delta = [0]
 
     if not os.path.isfile(EXPIRIES):
-        write_expiries()
-    expiry_dates = read_expiries(EXPIRIES)
-    print(expiry_dates)
+        write_expiry_hist()
+    expiry_hist = read_expiry_hist(EXPIRIES)
+    print(expiry_hist)
 
     utils.mkdir(CONTINUOUS)
 
-    csv_files = [f for f in os.listdir(os.curdir) if f.endswith('.csv')]
+    romans = {0:'0', 1:'I', 2:'II', 3:'III', 4:'IV', 5:'V', 6:'VI', 7:'VII', 8:'VIII', 9:'IX', 10:'X', 11:'XI',
+              12:'XII', 13:'XIII', 14:'XIV', 15:'XV'}
 
+    csv_files = [f for f in os.listdir(os.curdir) if f.endswith('.csv')]
     print('Initiating continuous contract creation for {} days'.format(len(csv_files)))
 
-    #near_exp, far_exp = {}, {}  # '1900-01-01', '1900-01-01' # Initialize
-
     exp = [{}]
-
     success, error = 0, 0
     for file in csv_files:
         try:
@@ -316,22 +370,29 @@ def continuous_contracts_all(delta=None):
                             exp.append({})
                         exp[d][symbol] = '1900-01-01'  # Initialize
 
+                # print('#####', exp)
+
                 series = []
                 for d in delta:
-                    if exp[d][symbol] <= dates.relativedate(date, days=d):
-                        exp[d][symbol] = select_expiry(expiry_dates, date, symbol, d, 0)
+                    # if exp[d][symbol] <= dates.relativedate(date, days=d):
+                    # print('$$$$$$$$', d, symbol, exp[d][symbol], '%%%%', exp)
+                    if expiry_hist['expiry_TDMs'][exp[d][symbol]] - df['TDM'][0] < d:
+                        exp[d][symbol] = select_expiry_new(csv_files, expiry_hist, date, symbol, d)
                     series.append(df.loc[(df['Symbol'] == symbol) & (df['Expiry'] == exp[d][symbol])])
-                    series[d]['Symbol'] = series[d]['Symbol'] + '-' + 'I' * d
+                    #if d == 0:
+                    #    series[d]['Symbol'] = series[d]['Symbol'] + '-0'
+                    #else:
+                    #    series[d]['Symbol'] = series[d]['Symbol'] + '-' + 'I' * d
+                    series[d]['Symbol'] = series[d]['Symbol'] + '-' + romans[d]
                     date_pd = pd.concat([date_pd, series[d]], axis=0)
 
-            print('###')
             date_pd.to_csv('{}{}'.format(CONTINUOUS, file), sep=',', index=False)
             print(date, ',Continuous contract created', file)
             success += 1
+
         except:
             print(date, ',Error creating Continuous contract', file)
             error += 1
-
 
 
     print('Contract created for {} days, {} errors'.format(success, error))
@@ -346,9 +407,9 @@ def continuous_contracts_far_switch(near_delta=0, far_delta=10):
     """
 
     if not os.path.isfile(EXPIRIES):
-        write_expiries()
-    expiry_dates = read_expiries(EXPIRIES)
-    print(expiry_dates)
+        write_expiry_hist()
+    expiry_hist = read_expiry_hist(EXPIRIES)
+    print(expiry_hist)
 
     utils.mkdir(CONTINUOUS)
 
@@ -369,7 +430,7 @@ def continuous_contracts_far_switch(near_delta=0, far_delta=10):
                     near_exp[symbol], far_exp[symbol] = '1900-01-01', '1900-01-01'  # Initialize
 
                 if near_exp[symbol] <= dates.relativedate(date, days=near_delta):
-                    near_exp[symbol] = select_near_expiry(expiry_dates, date, symbol, near_delta)
+                    near_exp[symbol] = select_near_expiry(expiry_hist['expiry_dates'], date, symbol, near_delta)
 
                 if int(date[8:10]) < far_delta:
                     month_delta = 1
@@ -379,7 +440,7 @@ def continuous_contracts_far_switch(near_delta=0, far_delta=10):
                 exp_month_start_date = dates.setdate(exp_month_start_date, day=1)
 
                 if far_exp[symbol] < exp_month_start_date:
-                    far_exp[symbol] = select_far_expiry(expiry_dates, date, symbol, far_delta)
+                    far_exp[symbol] = select_far_expiry(expiry_hist['expiry_dates'], date, symbol, far_delta)
                 series1 = df.loc[(df['Symbol'] == symbol) & (df['Expiry'] == near_exp[symbol])]
                 series2 = df.loc[(df['Symbol'] == symbol) & (df['Expiry'] == far_exp[symbol])]
                 series1['Symbol'], series2['Symbol'] = series1['Symbol'] + '-I', series2['Symbol'] + '-II'
@@ -396,14 +457,16 @@ def continuous_contracts_far_switch(near_delta=0, far_delta=10):
 
     print('Contract created for {} days, {} errors'.format(success, error))
 
-def write_expiries(e_file=EXPIRIES):
+def write_expiry_hist(e_file=EXPIRIES):
 
     expiries = {}
+    expiry_TDMs = {}
 
     csv_files = [f for f in os.listdir(os.curdir) if f.endswith('.csv')]
 
+    expiry_TDMs['1900-01-01'] = 0
+
     for file in csv_files:
-        date = file[0:10]
         df = pd.read_csv(file)
 
         for index, row in df.iterrows():
@@ -411,19 +474,42 @@ def write_expiries(e_file=EXPIRIES):
                 expiries[row['Symbol']] = [row['Expiry']]
             if row['Expiry'] not in expiries[row['Symbol']]:
                 expiries[row['Symbol']].append(row['Expiry'])
+            if row['Expiry'] not in expiry_TDMs:
+                expiry_TDMs[row['Expiry']] = 100 # Initialize
+            if row['Expiry'] == row['Date'] and expiry_TDMs[row['Date']] == 100:
+                expiry_TDMs[row['Expiry']] = row['TDM']
 
     for key, value in expiries.items():
         expiries[key].sort()
 
+    max_date = max(csv_files)[0:10]
+
+    for key, value in expiry_TDMs.items():
+        fdate = key
+        if value == 100 and fdate <= max_date:
+            while(value == 100):
+                if os.path.isfile('{}.csv'.format(fdate)):
+                    df = pd.read_csv('{}.csv'.format(fdate))
+                    print(df['TDM'][0])
+                    expiry_TDMs[key], value = df['TDM'][0], df['TDM'][0]
+                fdate = dates.relativedate(fdate, days=-1)
+
     with open(e_file, 'wb') as handle:
-        pkl.dump(expiries, handle)
+        pkl.dump({'expiry_dates': expiries, 'expiry_TDMs': expiry_TDMs}, handle)
 
 
-def read_expiries(e_file=EXPIRIES):
+def read_expiry_hist(e_file=EXPIRIES):
 
     with open(e_file, 'rb') as handle:
-        expiries = pkl.load(handle)
+        expiry_hist = pkl.load(handle)
 
-    return expiries
+    return expiry_hist
+
+def trading_days_between(start, end, csv_files):
+    return len([f[0:10] for f in csv_files if f[0:10] >= start and f[0:10] <= end])
+
+
+
+
 
 

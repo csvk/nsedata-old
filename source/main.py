@@ -30,18 +30,20 @@ os.chdir(ROOT)
 
 #### Steps Start for Currderivs edit
 os.chdir(PATH + 'csv/')
+#cd.ren_csv_files()
+os.chdir('futures/')
 #cd.clean_csv()
 os.chdir('cleaned/')
 #cd.format_csv_futures('Symbol', 'Date', 'OPEN_PRICE', 'HIGH_PRICE', 'LOW_PRICE', 'CLOSE_PRIC', 'TRD_NO_CON',
-#                              'OI_NO_CON', 'Expiry')
-os.chdir('formatted/test/')
-#cd.ren_csv_files()
+#                      'OI_NO_CON', 'TDM', 'TDW', 'Expiry')
 
 ### Steps End for Currderivs edit
 
 ### Steps for creating continuous contract
-#os.chdir(PATH + 'cleaned/formatted/')
-cd.continuous_contracts_all([0,1,2])
+os.chdir('formatted/')
+cd.continuous_contracts_all([0,1,2,3,4,5,6,7,8,9,10])
+#cd.write_expiry_hist()
+#print(cd.read_expiry_hist())
 
 ### Steps end for continuous contract
 
