@@ -24,7 +24,11 @@ CLEANED = 'cleaned/'
 UNCLEANED = 'uncleaned/'
 FORMATTED = 'formatted/'
 EXPIRIES = 'expiries.txt'
+ROLLOVER_MULT = 'rollover_multipliers.txt'
 CONTINUOUS = 'continuous/'
+VOL_CONTINUOUS = 'continuous_vol/'
+OI_CONTINUOUS = 'continuous_oi/'
+RATIO_ADJUSTED = 'ratio_adjusted/'
 FUTURES = 'futures/'
 OPTIONS = 'options/'
 
@@ -457,6 +461,7 @@ def continuous_contracts_far_switch(near_delta=0, far_delta=10):
 
     print('Contract created for {} days, {} errors'.format(success, error))
 
+
 def write_expiry_hist(e_file=EXPIRIES):
 
     expiries = {}
@@ -473,6 +478,8 @@ def write_expiry_hist(e_file=EXPIRIES):
             if row['Symbol'] not in expiries:
                 expiries[row['Symbol']] = [row['Expiry']]
             if row['Expiry'] not in expiries[row['Symbol']]:
+                #if row['Symbol'] == 'FUTCURUSDINR':
+                #    print(row['Symbol'], row['Date'], row['Expiry'])
                 expiries[row['Symbol']].append(row['Expiry'])
             if row['Expiry'] not in expiry_TDMs:
                 expiry_TDMs[row['Expiry']] = 100 # Initialize
@@ -490,7 +497,7 @@ def write_expiry_hist(e_file=EXPIRIES):
             while(value == 100):
                 if os.path.isfile('{}.csv'.format(fdate)):
                     df = pd.read_csv('{}.csv'.format(fdate))
-                    print(df['TDM'][0])
+                    #print(df['TDM'][0])
                     expiry_TDMs[key], value = df['TDM'][0], df['TDM'][0]
                 fdate = dates.relativedate(fdate, days=-1)
 
@@ -509,6 +516,176 @@ def trading_days_between(start, end, csv_files):
     return len([f[0:10] for f in csv_files if f[0:10] >= start and f[0:10] <= end])
 
 
+def read_rollover_mult_hist(e_file=ROLLOVER_MULT):
+
+    with open(e_file, 'rb') as handle:
+        rollover_mult_hist = pkl.load(handle)
+
+    return rollover_mult_hist
+
+
+def continuous_contracts_vol_oi_rollover(parm):
+    """
+    Create continuous contracts file for near and far series
+    :param 'Volume' or 'Open Interest'
+    :return: None, Create continuous contracts file
+    """
+
+    if not os.path.isfile(EXPIRIES):
+        write_expiry_hist()
+
+    e = read_expiry_hist()
+    print(e)
+
+    exphist = e['expiry_dates']
+
+    if parm == 'Volume':
+        path = VOL_CONTINUOUS
+        field = 'TRD_NO_CON'
+    elif parm == 'Open Interest':
+        path = OI_CONTINUOUS
+        field = 'OI_NO_CON'
+
+    utils.mkdir(path)
+
+    csv_files = [f for f in os.listdir(os.curdir) if f.endswith('.csv')]
+    print('Initiating continuous contract creation for {} days'.format(len(csv_files)))
+
+    exp_idx = {}
+    exp_rollover = {}
+    rollover_multiplier = {}
+    success, error = 0, 0
+    for file in csv_files:
+        try:
+            date = file[0:10]
+            df = pd.read_csv(file)
+            date_pd = pd.DataFrame()
+            for symbol in df['Symbol'].unique():
+                # print(symbol, '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+                if symbol not in exp_idx:
+                    exp_idx[symbol] = -1  # Initialize
+                    exp_rollover[symbol] = False  # Initialize
+                    rollover_multiplier[symbol] = {}  # Initialize
+
+                if exp_idx[symbol] == -1:  # First record for symbol
+                    sel_record = df.loc[(df['Symbol'] == symbol) & (df['Expiry'] == exphist[symbol][0])]
+                    exp_idx[symbol] = 0
+                    # print('@@@ 1', exphist[symbol][0])
+                # elif exp_idx[symbol] == len(exphist[symbol]) - 1:  # Last expiry for symbol
+                #    sel_record = df.loc[
+                #        (df['Symbol'] == symbol) & (df['Expiry'] == exphist[symbol][exp_idx[symbol]])]
+                #    print('@@@ 2', exphist[symbol][exp_idx[symbol]])
+                else:
+                    curr_record = df.loc[
+                        (df['Symbol'] == symbol) & (df['Expiry'] == exphist[symbol][exp_idx[symbol]])]
+                    curr_exp_idx = exp_idx[symbol]
+                    nxt_exp_idx = curr_exp_idx
+                    # print('%%%%%%%%%%%%%%%%%%%%', exphist[symbol][curr_exp_idx][0:7], exphist[symbol][nxt_exp_idx][0:7])
+                    while exphist[symbol][curr_exp_idx][0:7] == exphist[symbol][nxt_exp_idx][0:7]:
+                        nxt_exp_idx += 1
+                    nxt_record = df.loc[(df['Symbol'] == symbol)
+                                        & (df['Expiry'] == exphist[symbol][nxt_exp_idx])]
+                    # print('@@@ 3', exphist[symbol][exp_idx[symbol]], exphist[symbol][nxt_exp_idx])
+
+                    if not curr_record.empty and not nxt_record.empty:
+                        # print('@@@ 4')
+                        if exp_rollover[symbol]:
+                            sel_record = curr_record
+                            exp_rollover[symbol] = False
+                            # print('@@@ 5')
+                        else:
+                            sel_record = curr_record
+                            # print('@@@ 6')
+                        if int(curr_record[field]) < int(nxt_record[field]):
+                            # print('@@@ 7')
+                            exp_rollover[symbol] = True
+                            # exp_idx[symbol] += 1
+                            exp_idx[symbol] = nxt_exp_idx
+                            # print(type(curr_record['CLOSE_PRIC'].iloc[0]), type(nxt_record['CLOSE_PRIC'].iloc[0]))
+                            rollover_multiplier[symbol][date] = float(curr_record['CLOSE_PRIC'].iloc[0]) / \
+                                                                float(nxt_record['CLOSE_PRIC'].iloc[0])
+                    elif curr_record.empty and nxt_record.empty:
+                        # print('@@@ 8')
+                        pass
+                    elif curr_record.empty:
+                        sel_record = nxt_record
+                        # print('@@@ 9')
+                        exp_idx[symbol] += 1
+                        # rollover_multiplier[str.strip(symbol)][date] = 1
+                        rollover_multiplier[symbol][date] = 1
+                    elif nxt_record.empty:
+                        sel_record = curr_record
+                        # print('@@@ 10')
+
+                # print(sel_record['Symbol'], sel_record['Date'], sel_record['Expiry'])
+                if not sel_record.empty:
+                    date_pd = pd.concat([date_pd, sel_record], axis=0)
+
+            # date_pd['Symbol'] = date_pd['Symbol'].apply(str.strip)
+            date_pd.to_csv('{}{}'.format(path, file), sep=',', index=False)
+            print(date, ',Continuous contract created', file)
+            success += 1
+
+
+
+        except:
+            print(date, ',Error creating Continuous contract', file)
+            error += 1
+
+
+    with open(path + ROLLOVER_MULT, 'wb') as handle:
+        pkl.dump(rollover_multiplier, handle)
+
+    print('Contract created for {} days, {} errors'.format(success, error))
+
+    print(rollover_multiplier)
+
+
+def ratio_adjust():
+    """
+    Forward Ratio adjust continuous contract files
+    :return: None, create forward ratio adjusted continuous contracts
+    """
+
+    csv_files = [f for f in os.listdir(os.curdir) if f.endswith('.csv')]
+    csv_files.sort()
+
+    rollover_mult_hist = read_rollover_mult_hist()
+    print(rollover_mult_hist)
+
+    utils.mkdir(RATIO_ADJUSTED)
+
+    multipliers, symbol_curr_close = {}, {}
+    success, error = 0, 0
+    for file in csv_files:
+        try:
+            date = file[0:10]
+            df = pd.read_csv(file)
+
+            for symbol in df['Symbol'].unique():
+                if symbol not in multipliers:
+                    multipliers[symbol] = 1  # Initialize
+
+            for i, row in df.iterrows():
+                df.ix[i, 'OPEN_PRICE'] = round(df.ix[i, 'OPEN_PRICE'] * multipliers[df.ix[i, 'Symbol']], 2)
+                df.ix[i, 'HIGH_PRICE'] = round(df.ix[i, 'HIGH_PRICE'] * multipliers[df.ix[i, 'Symbol']], 2)
+                df.ix[i, 'LOW_PRICE'] = round(df.ix[i, 'LOW_PRICE'] * multipliers[df.ix[i, 'Symbol']], 2)
+                df.ix[i, 'CLOSE_PRIC'] = round(df.ix[i, 'CLOSE_PRIC'] * multipliers[df.ix[i, 'Symbol']], 2)
+
+            for symbol in df['Symbol'].unique():
+                if date in rollover_mult_hist[symbol]:
+                    multipliers[symbol] = multipliers[symbol] * rollover_mult_hist[symbol][date]
+
+
+            df.to_csv('{}{}'.format(RATIO_ADJUSTED, file), sep=',', index=False)
+            print(date, ',Continuous contract created', file)
+            success += 1
+
+        except:
+            print(date, ',Error creating Continuous contract', file)
+            error += 1
+
+    print('Contract created for {} days, {} errors'.format(success, error))
 
 
 

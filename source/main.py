@@ -41,11 +41,19 @@ os.chdir('cleaned/')
 
 ### Steps for creating continuous contract
 os.chdir('formatted/')
-cd.continuous_contracts_all([0,1,2,3,4,5,6,7,8,9,10])
+#cd.continuous_contracts_all([0,1,2,3,4,5,6,7,8,9,10])
+
+#os.chdir('test/')
 #cd.write_expiry_hist()
 #print(cd.read_expiry_hist())
+#cd.continuous_contracts_vol_oi_rollover('Volume')
+#print(cd.read_expiry_hist())
+os.chdir('continuous_vol/')
+cd.ratio_adjust()
 
 ### Steps end for continuous contract
+
+
 
 
 # print('Initiating NSE Equity derivatives bhavcopy download')
